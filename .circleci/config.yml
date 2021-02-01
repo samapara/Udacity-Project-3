@@ -229,7 +229,7 @@ jobs:
             echo TYPEORM_PASSWORD=$TYPEORM_PASSWORD >> "backend/.env"
             echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> "backend/.env"
             cd .circleci/ansible
-            ansible-playbook -i inventory.txt main.yml
+            ansible-playbook -i inventory.txt configure-server.yaml
 
       - destroy_environment:
           id: ${CIRCLE_WORKFLOW_ID:0:7}      
