@@ -81,8 +81,8 @@ jobs:
       - run:
           name: Run frontend test
           command: |
-            cd frontend
-            npm run test
+            cd frontend && pwd
+            npm i && npm run test
           
                 
   test-backend:
