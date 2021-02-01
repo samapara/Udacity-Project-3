@@ -9,21 +9,19 @@ commands:
   destroy_environment:
     description: Destroy Cloud Formation Stacks and infrastructure
     parameters:
-      when:
-        type: string
       id:
         type: string
     steps:
       - run:
           name: Destroy udapeople backend cfn stack
           command: |
-            aws cloudformation delete-stack --stack-name Udapeople-<< parameters.id >>
+            aws cloudformation delete-stack --stack-name udapeople-backend-<< parameters.id >>
           when: on_fail
       - run:
           name: Destroy udapeople frontend cfn stack and S3 bucket
           command: |
             aws s3 rm s3://udapeople-<< parameters.id >> --recursive
-            aws cloudformation delete-stack --stack-name Udapeople-<< parameters.id >>
+            aws cloudformation delete-stack --stack-name udapeople-frontend-<< parameters.id >>
           when: on_fail
 
 # commands:
@@ -166,7 +164,8 @@ jobs:
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
               --filters "Name=tag:project,Values=udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --output text)
-            curl -H "Content-Type: text/plain" -H "token: 1e288415-cfc8-4a0a-a23c-087eb7cd7678" --request PUT --data "http://$BACKEND_IP:3030" https://api.memstash.io/values/BACKEND_URL
+            curl -H "Content-Type: text/plain" -H "token: 2c28ee72-ceab-445e-9d93-10bd157748ce" --request PUT --data "http://$BACKEND_IP:3030" https://api.memstash.io/values/BACKEND_URL
+
       - run:
           name: Deploy frontend infrastructure
           working_directory: ./.circleci/files
