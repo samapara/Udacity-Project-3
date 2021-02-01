@@ -210,12 +210,10 @@ jobs:
           name: Set up inventory file
           command: |
             cd .circleci/ansible
-            echo "[web]" >> inventory.txt
+            # echo "[web]" >> inventory.txt
             URLS=$(curl -H "token: 2c28ee72-ceab-445e-9d93-10bd157748ce" --request GET https://api.memstash.io/values/url_${CIRCLE_WORKFLOW_ID})
             echo "$URLS" >> inventory.txt
             cat inventory.txt
-
-            echo "[all]" > inventory
       - run:
           name: Configure server with ansible
           no_output_timeout: 30m
@@ -232,7 +230,7 @@ jobs:
             echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> "backend/.env"
             cat backend/.env
             cd .circleci/ansible
-            ansible-playbook -i inventory configure-server.yml
+            ansible-playbook -i inventory.txt configure-server.yml
 
       - destroy_environment:
           id: ${CIRCLE_WORKFLOW_ID:0:7}      
