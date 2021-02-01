@@ -395,21 +395,30 @@ jobs:
       - image: amazon/aws-cli
     steps:
       - checkout
-      - run: 
-          name: get the old workflow-id
-          command: | 
-           if aws cloudformation describe-stacks --region us-west-2 --stack-name Udapeople-1360399816 ; then
-              aws cloudformation describe-stacks --stack-name Udapeople-1360399816 --query Stacks[0].Outputs[].OutputValue --output text > ~/id.txt
-           fi   
-      - persist_to_workspace:
-          root: ~/
-          paths:
-            - id.txt
       - run:
-          name: Update the cloudfront
+          name: Install dependencies
           command: |
-            echo -e "$CIRCLE_WORKFLOW_ID"
-            aws cloudformation deploy --stack-name "Udapeople-1360399816" --template-file .circleci/files/cloudfront.yml --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}"
+            yum install -y tar gzip curl
+            curl -sL https://rpm.nodesource.com/setup_10.x | bash -
+            yum install -y nodejs
+      - run:
+          name: Store old WorkflowID in memstash for cleanup phase
+          working_directory: ./.circleci/files
+          command: |
+            WorkflowID=$(aws cloudformation \
+              list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
+              --no-paginate --output text)
+
+            curl -H "Content-Type: text/plain" -H "token: 2c28ee72-ceab-445e-9d93-10bd157748ce" --request PUT --data "$WorkflowID" https://api.memstash.io/values/WorkflowID
+      - run:
+          name: Update cloudfront distribution
+          working_directory: ./.circleci/files
+          command: |
+            aws cloudformation deploy \
+              --template-file cloudfront.yaml \
+              --stack-name Udapeople-1360399816 \
+              --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}" \
+              --tags project=udapeople
       - destroy_environment:
           id: ${CIRCLE_WORKFLOW_ID:0:7}
  
@@ -419,16 +428,20 @@ jobs:
       - image: amazon/aws-cli
     steps:
       - checkout
-      - run: yum -y install tar gzip
-      - attach_workspace:
-          at: ~/ 
       - run:
-          name: Remove previous stack and files
+          name: Clean up old environment
           command: |
-            ls
-            aws s3 rb s3://udapeople-$(cat ~/id.txt) --force
-            aws cloudformation delete-stack --stack-name "backendstack-$(cat ~/id.txt)"
-            aws cloudformation delete-stack --stack-name "frontendstack-$(cat ~/id.txt)"
+            OldWorkflowID=$(curl -H "token: 2c28ee72-ceab-445e-9d93-10bd157748ce" --request GET https://api.memstash.io/values/WorkflowID)
+            CurrentWorkflowID=${CIRCLE_WORKFLOW_ID:0:7}
+            if [[ "$CurrentWorkflowID" != "$OldWorkflowID" ]]
+            then
+              echo "$OldWorkflowID!=$CurrentWorkflowID => will delete old version"
+              aws s3 rm "s3://udapeople-${OldWorkflowID}" --recursive
+              aws cloudformation delete-stack --stack-name "udapeople-frontend-${OldWorkflowID}"
+              aws cloudformation delete-stack --stack-name "udapeople-backend-${OldWorkflowID}"
+            else
+              echo "$OldWorkflowID==$CurrentWorkflowID => nothing needs to be done..."
+            fi
 
       # - run:
       #     name: Get old stack workflow id
