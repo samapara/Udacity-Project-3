@@ -234,21 +234,42 @@ jobs:
       - destroy_environment:
           id: ${CIRCLE_WORKFLOW_ID:0:7}      
 
-#   run-migrations:
-#     docker:
-#       # Docker image here that supports NodeJS
-#     steps:
-#       # Checkout code from git
-#       - run:
-#           name: Run migrations
-#           command: |
-#             # Your code here
-#             exit 1
-#       - run:
-#           name: Send migration results to memstash
-#           command: |
-#             # Your code here
-#             exit 1
+  run-migrations:
+    docker:
+      - image: circleci/node:13.8.0
+    
+    steps:
+      - checkout
+      - run:
+          name: Install AWS CLI dependencies
+          working_directory: /tmp
+          command: |
+            sudo apt-get update && sudo apt-get install -yy less
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip awscliv2.zip
+            sudo ./aws/install
+      - run:
+          name: Run migrations
+          command: |
+            cd backend
+            npm i
+            npm run migrations > migration_status
+      - run:
+          name: Send migration results to memstash
+          command: |
+            cd backend
+            if grep -q "has been executed successfully" migration_status
+            then
+              echo "DB migration was successful, will update memstash..."
+              curl -H "Content-Type: text/plain" -H "token: 2a9e15d6-b9fa-4b1f-a5dc-e3b9643a9b63" --request PUT --data "success" https://api.memstash.io/values/DB_MIGRATION_${CIRCLE_WORKFLOW_ID:0:7}
+            else
+              echo "DB migration failed, please verify setup! Probably the database already exists. Verify setup!"
+              curl -H "Content-Type: text/plain" -H "token: 2a9e15d6-b9fa-4b1f-a5dc-e3b9643a9b63" --request PUT --data "failure" https://api.memstash.io/values/DB_MIGRATION_${CIRCLE_WORKFLOW_ID:0:7}
+            fi
+            echo "WorkflowID=${CIRCLE_WORKFLOW_ID:0:7}"
+
+      - destroy_environment:
+          id: ${CIRCLE_WORKFLOW_ID:0:7}
 #      # Here's where you will add some code to rollback on failure      
 
 #   deploy-frontend:
