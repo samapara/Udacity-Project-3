@@ -123,6 +123,9 @@ jobs:
           command: |
             cd backend
             npm audit --audit-level=critical
+      - run:
+          name: Fix Audit Vulnerabilities
+          command: npm audit fix --audit-level=critical --force
 
 #   deploy-infrastructure:
 #     docker:
