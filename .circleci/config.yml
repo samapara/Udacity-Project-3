@@ -5,6 +5,26 @@ executors:
     docker:
       - image: circleci/node:13.8.0
 
+commands:
+  destroy_environment:
+    description: Destroy Cloud Formation Stacks and infrastructure
+    parameters:
+      when:
+        type: string
+      id:
+        type: string
+    steps:
+      - run:
+          name: Destroy udapeople backend cfn stack
+          command: |
+            aws cloudformation delete-stack --stack-name Udapeople-<< parameters.id >>
+          when: << parameters.when >>
+      - run:
+          name: Destroy udapeople frontend cfn stack and S3 bucket
+          command: |
+            aws s3 rm s3://udapeople-<< parameters.id >> --recursive
+            aws cloudformation delete-stack --stack-name Udapeople-<< parameters.id >>
+          when: << parameters.when >>
 
 # commands:
 #   destroy-environment:
@@ -129,6 +149,7 @@ jobs:
       - image: amazon/aws-cli
     steps:
       - checkout
+      - run: yum -y install tar gzip
       - run:
           name: Ensure back-end infrastructure exists
           command: |
@@ -154,12 +175,15 @@ jobs:
             aws ec2 describe-instances \
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
               --filters "Name=tag:project,Values=Udapeople-backend-${CIRCLE_WORKFLOW_ID}" \
-              --output text >> inventory.txt
-            cat inventory.txt
+              --output text >> inventory
+            cat inventory
       - persist_to_workspace:
           root: ~/
           paths:
-            - project/.circleci/ansible/inventory.txt
+            - project/.circleci/ansible/inventory
+      - destroy_environment:
+          id: ${CIRCLE_WORKFLOW_ID}
+          when: on_fail
       #Here's where you will add some code to rollback on failure      
 
 #   configure-infrastructure:
