@@ -1,5 +1,5 @@
 URL01: https://github.com/samapara/Udacity-Project-3
-URL02: http://udapeople-bb4d6fd.s3-website-us-west-2.amazonaws.com/
+URL02: http://udapeople-0f2cadb.s3-website-us-west-2.amazonaws.com/
 URL03: d37l2mgjdr402k.cloudfront.net/
 URL04: ec2-54-188-226-174.us-west-2.compute.amazonaws.com:3030/
 URL05: http://ec2-54-202-218-99.us-west-2.compute.amazonaws.com:9090/
