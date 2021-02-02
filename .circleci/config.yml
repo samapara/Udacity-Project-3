@@ -335,6 +335,7 @@ jobs:
           name: Set Inventory File
           command: |
             cd .circleci/ansible
+            echo "[web]" >> inventory.txt
             URLS=$(curl -H "token: 2c28ee72-ceab-445e-9d93-10bd157748ce" --request GET https://api.memstash.io/values/url_${CIRCLE_WORKFLOW_ID})
             echo "$URLS" >> inventory.txt
             cat inventory.txt 
